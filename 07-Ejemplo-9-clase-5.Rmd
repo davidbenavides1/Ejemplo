@@ -1,0 +1,75 @@
+---
+title: "Clase 5"
+author: "Wilmer Pineda"
+date: "10/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Ejemplo 9
+
+```{r}
+library(fda)
+library(fda.usc)
+library(rainbow)
+library(mgcv)
+require(freqdom.fda)
+require(fdANOVA)
+require(fds)
+require(fdcov)
+require(changepoint)
+require(reshape2)
+require(fChange)
+require(roahd)
+require(refund)
+library(rriskDistributions)
+```
+
+```{r}
+data("CanadianWeather")
+f=function(x){
+  n=length(x)
+  i=0
+  for (ii in 1:n) {
+    if(x[ii]<=0){
+      i=i+1
+    }
+  }
+  return(i)
+}
+
+```
+
+La variable respuesta son los conteos de días que tuvieron temperaturas menores a 0 para cada ciudad.
+
+```{r}
+x=fdata(t(CanadianWeather$dailyAv[,,2]))
+CanadianWeather$y=as.data.frame(apply(CanadianWeather$dailyAv[,,"Temperature.C"], 2, f))
+tt=x[["argvals"]]
+response=CanadianWeather$y
+response=as.data.frame(response)
+colnames(response)=c("response")
+nbasis.x=5
+nbasis.b=5
+basis1=create.bspline.basis(rangeval=range(tt),nbasis=nbasis.x)
+basis2=create.bspline.basis(rangeval=range(tt),nbasis=nbasis.b)
+basis.x=list("x"=basis1)
+basis.b=list("x"=basis2)
+ldata=list("df"=response,"x"=x)
+res2=fregre.gsam(formula=response~s(x,k=5),family=poisson(),data=ldata,basis.b=basis.b,basis.x=basis.x)
+summary(res2)
+plot.fdata(x,type="l",col=rainbow(10))
+```
+
+```{r}
+plot(res2$residuals,ylab="", main="Residuales del modelo")
+abline(h=0)
+```
+
+```{r}
+mean((res2$residuals)^2)
+anova(res2)
+```
